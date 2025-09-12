@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magyar Politikai TikTok Tartalom Generátor</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #667eea;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .lang-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .lang-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .form-subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control:invalid {
+            border-color: #e53e3e;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .topics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .topic-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #f7fafc;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .topic-checkbox:hover {
+            background: #edf2f7;
+        }
+
+        .topic-checkbox.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .topic-checkbox input {
+            display: none;
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+            text-align: center;
+            display: none;
+        }
+
+        .status-card.show {
+            display: block;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            color: #667eea;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success {
+            color: #38a169;
+        }
+
+        .error {
+            color: #e53e3e;
+        }
+
+        .result-info {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .feature-card p {
+            color: #718096;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .container {
+                padding: 0 1rem;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fab fa-tiktok"></i>
+                <h1 data-hu="Magyar Politikai TikTok Generátor" data-en="Hungarian Political TikTok Generator">Magyar Politikai TikTok Generátor</h1>
+            </div>
+            <div class="lang-toggle">
+                <button class="lang-btn active" onclick="setLanguage('hu')">HU</button>
+                <button class="lang-btn" onclick="setLanguage('en')">EN</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="form-card">
+            <h2 class="form-title" data-hu="Tartalom Ötletek Generálása" data-en="Generate Content Ideas">Tartalom Ötletek Generálása</h2>
+            <p class="form-subtitle" data-hu="AI-alapú TikTok tartalom ötletek magyar politikai kontextusban" data-en="AI-powered TikTok content ideas in Hungarian political context">AI-alapú TikTok tartalom ötletek magyar politikai kontextusban</p>
+
+            <form id="contentForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label data-hu="Szervezet típusa *" data-en="Organization Type *">Szervezet típusa *</label>
+                        <select class="form-control" id="organizationType" name="organization_type" required>
+                            <option value="ministry" data-hu="Minisztérium" data-en="Ministry">Minisztérium</option>
+                            <option value="party" data-hu="Politikai párt" data-en="Political Party">Politikai párt</option>
+                            <option value="journalist" data-hu="Újságíró/Média" data-en="Journalist/Media">Újságíró/Média</option>
+                            <option value="ngo" data-hu="Civil szervezet" data-en="NGO">Civil szervezet</option>
+                            <option value="agency" data-hu="PR Ügynökség" data-en="PR Agency">PR Ügynökség</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label data-hu="Régió *" data-en="Region *">Régió *</label>
+                        <select class="form-control" id="region" name="region" required>
+                            <option value="budapest" data-hu="Budapest" data-en="Budapest">Budapest</option>
+                            <option value="videk" data-hu="Vidék" data-en="Rural Areas">Vidék</option>
+                            <option value="nagyvarosok" data-hu="Nagyvárosok" data-en="Major Cities">Nagyvárosok</option>
+                            <option value="national" data-hu="Országos" data-en="National">Országos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-hu="Email cím (PDF jelentéshez) *" data-en="Email Address (for PDF report) *">Email cím (PDF jelentéshez) *</label>
+                    <input type="email" class="form-control" id="email" name="email" required placeholder="valaki@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label data-hu="Kulcsszó/Téma *" data-en="Keyword/Topic *">Kulcsszó/Téma *</label>
+                    <input type="text" class="form-control" id="keyword" name="keyword" required 
+                           placeholder="pl. egészségügyi reform, oktatás, gazdaságpolitika">
+                </div>
+
+                <div class="form-group">
+                    <label data-hu="Természetes nyelvű kérés (opcionális)" data-en="Natural Language Request (optional)">Természetes nyelvű kérés (opcionális)</label>
+                    <textarea class="form-control" id="prompt" name="prompt" rows="3" 
+                              placeholder="pl. Hogyan kommunikáljuk az új egészségügyi reformot a fiataloknak TikTokon?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label data-hu="Releváns hashtag témák (válassz legalább 2-t)" data-en="Relevant Hashtag Topics (select at least 2)">Releváns hashtag témák (válassz legalább 2-t)</label>
+                    <div class="topics-grid" id="topicsGrid">
+                        <!-- Topics will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <button type="submit" class="generate-btn" id="generateBtn">
+                    <i class="fas fa-magic"></i>
+                    <span data-hu="Ötletek Generálása" data-en="Generate Ideas">Ötletek Generálása</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="status-card" id="statusCard">
+            <div id="loadingStatus" class="loading">
+                <div class="spinner"></div>
+                <div>
+                    <h3 data-hu="Tartalom generálás folyamatban..." data-en="Generating content...">Tartalom generálás folyamatban...</h3>
+                    <p data-hu="Ez 30-60 másodpercig is eltarthat..." data-en="This may take 30-60 seconds...">Ez 30-60 másodpercig is eltarthat...</p>
+                </div>
+            </div>
+            <div id="successStatus" class="success hidden">
+                <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <h3 data-hu="Sikeres generálás!" data-en="Generation Successful!">Sikeres generálás!</h3>
+                <p data-hu="A jelentés elküldve az email címére." data-en="Report sent to your email address.">A jelentés elküldve az email címére.</p>
+                <div class="result-info" id="resultInfo"></div>
+            </div>
+            <div id="duplicateStatus" class="hidden" style="color: #f56500;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <h3 data-hu="Duplikált tartalom észlelve" data-en="Duplicate Content Detected">Duplikált tartalom észlelve</h3>
+                <p data-hu="Hasonló tartalom már létrejött az elmúlt héten. Próbálj más kulcsszavakat!" data-en="Similar content was already generated this week. Try different keywords!">Hasonló tartalom már létrejött az elmúlt héten. Próbálj más kulcsszavakat!</p>
+            </div>
+            <div id="errorStatus" class="error hidden">
+                <i class="fas fa-times-circle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <h3 data-hu="Hiba történt" data-en="An Error Occurred">Hiba történt</h3>
+                <p id="errorMessage"></p>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <i class="fas fa-brain"></i>
+                <h3 data-hu="Memória Védelem" data-en="Memory Protection">Memória Védelem</h3>
+                <p data-hu="Automatikusan kerüli a duplikált ötleteket és korábbi tartalmakat" data-en="Automatically avoids duplicate ideas and previous content">Automatikusan kerüli a duplikált ötleteket és korábbi tartalmakat</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-chart-trending-up"></i>
+                <h3 data-hu="Trending Analízis" data-en="Trending Analysis">Trending Analízis</h3>
+                <p data-hu="Valós idejű magyar politikai trend elemzés és releváns ötletek" data-en="Real-time Hungarian political trend analysis and relevant ideas">Valós idejű magyar politikai trend elemzés és releváns ötletek</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-map-marked-alt"></i>
+                <h3 data-hu="Lokális Kontextus" data-en="Local Context">Lokális Kontextus</h3>
+                <p data-hu="Magyar politikai specifikus tartalom regionális relevancia szerint" data-en="Hungarian political specific content by regional relevance">Magyar politikai specifikus tartalom regionális relevancia szerint</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - UPDATE THIS WITH YOUR N8N WEBHOOK URL
+        const WEBHOOK_URL = 'https://padavan1129.app.n8n.cloud/webhook/generate-hungarian-content';
+        
+        // Hungarian political topics
+        const hungarianTopics = {
+            'hu': [
+                '#egészségügy', '#oktatás', '#gazdaság', '#infláció', 
+                '#nyugdíj', '#kórházak', '#tanárok', '#eu', 
+                '#brüsszel', '#beruházás', '#fejlesztés', '#munkahelyek',
+                '#család', '#szuverenitás', '#energiaárak', '#lakhatás',
+                '#közlekedés', '#digitalizáció', '#klímaváltozás', '#migráció'
+            ],
+            'en': [
+                '#healthcare', '#education', '#economy', '#inflation',
+                '#pension', '#hospitals', '#teachers', '#eu',
+                '#brussels', '#investment', '#development', '#jobs',
+                '#family', '#sovereignty', '#energy', '#housing',
+                '#transport', '#digitalization', '#climate', '#migration'
+            ]
+        };
+
+        let currentLanguage = 'hu';
+        let selectedTopics = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            generateUserId();
+            populateTopics();
+            setupForm();
+        });
+
+        function generateUserId() {
+            if (!localStorage.getItem('hungarian_political_user_id')) {
+                const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('hungarian_political_user_id', userId);
+            }
+        }
+
+        function populateTopics() {
+            const topicsGrid = document.getElementById('topicsGrid');
+            const topics = hungarianTopics[currentLanguage];
+            
+            topicsGrid.innerHTML = topics.map(topic => `
+                <div class="topic-checkbox" onclick="toggleTopic('${topic}')">
+                    <input type="checkbox" id="topic_${topic}" name="topics" value="${topic}">
+                    <span>${topic}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleTopic(topic) {
+            const checkbox = document.getElementById(`topic_${topic}`);
+            const container = checkbox.parentElement;
+            
+            if (selectedTopics.includes(topic)) {
+                selectedTopics = selectedTopics.filter(t => t !== topic);
+                container.classList.remove('selected');
+                checkbox.checked = false;
+            } else {
+                selectedTopics.push(topic);
+                container.classList.add('selected');
+                checkbox.checked = true;
+            }
+        }
+
+        function setupForm() {
+            const form = document.getElementById('contentForm');
+            form.addEventListener('submit', handleFormSubmit);
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            if (selectedTopics.length < 2) {
+                alert(currentLanguage === 'hu' ? 'Legalább 2 hashtag témát válassz ki!' : 'Please select at least 2 hashtag topics!');
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const userId = localStorage.getItem('hungarian_political_user_id');
+            
+            const requestData = {
+                user_id: userId,
+                keyword: formData.get('keyword'),
+                email: formData.get('email'),
+                organization_type: formData.get('organization_type'),
+                region: formData.get('region'),
+                prompt: formData.get('prompt'),
+                topics: selectedTopics
+            };
+
+            console.log('Sending request:', requestData);
+
+            // Show loading status
+            showStatus('loading');
+            
+            try {
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+                console.log('Response:', result);
+
+                if (result.ok) {
+                    if (result.duplicate_content_detected) {
+                        showStatus('duplicate');
+                    } else {
+                        showStatus('success', result);
+                    }
+                } else {
+                    throw new Error(result.message || 'Unknown error occurred');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('error', error.message);
+            }
+        }
+
+        function showStatus(type, data = null) {
+            const statusCard = document.getElementById('statusCard');
+            const loadingStatus = document.getElementById('loadingStatus');
+            const successStatus = document.getElementById('successStatus');
+            const duplicateStatus = document.getElementById('duplicateStatus');
+            const errorStatus = document.getElementById('errorStatus');
+            
+            // Hide all statuses
+            [loadingStatus, successStatus, duplicateStatus, errorStatus].forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Show status card
+            statusCard.classList.add('show');
+            
+            // Show relevant status
+            switch (type) {
+                case 'loading':
+                    loadingStatus.classList.remove('hidden');
+                    document.getElementById('generateBtn').disabled = true;
+                    break;
+                    
+                case 'success':
+                    successStatus.classList.remove('hidden');
+                    if (data) {
+                        const resultInfo = document.getElementById('resultInfo');
+                        resultInfo.innerHTML = `
+                            <strong>${currentLanguage === 'hu' ? 'Részletek:' : 'Details:'}</strong><br>
+                            ${currentLanguage === 'hu' ? 'Felhasználó:' : 'User:'} ${data.user_id || 'N/A'}<br>
+                            ${currentLanguage === 'hu' ? 'Kulcsszó:' : 'Keyword:'} ${data.keyword || 'N/A'}<br>
+                            ${currentLanguage === 'hu' ? 'Régió:' : 'Region:'} ${data.region || 'N/A'}
+                        `;
+                    }
+                    document.getElementById('generateBtn').disabled = false;
+                    break;
+                    
+                case 'duplicate':
+                    duplicateStatus.classList.remove('hidden');
+                    document.getElementById('generateBtn').disabled = false;
+                    break;
+                    
+                case 'error':
+                    errorStatus.classList.remove('hidden');
+                    document.getElementById('errorMessage').textContent = data || 'Unknown error occurred';
+                    document.getElementById('generateBtn').disabled = false;
+                    break;
+            }
+            
+            // Scroll to status
+            statusCard.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update language buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update all text elements
+            document.querySelectorAll('[data-hu]').forEach(el => {
+                el.textContent = el.getAttribute(`data-${lang}`);
+            });
+            
+            // Update select options
+            document.querySelectorAll('option[data-hu]').forEach(option => {
+                option.textContent = option.getAttribute(`data-${lang}`);
+            });
+            
+            // Regenerate topics
+            selectedTopics = []; // Reset selections when switching language
+            populateTopics();
+        }
+
+        // Auto-hide status after successful generation
+        function hideStatusAfterDelay() {
+            setTimeout(() => {
+                document.getElementById('statusCard').classList.remove('show');
+            }, 10000); // Hide after 10 seconds
+        }
+    </script>
+</body>
+</html>
